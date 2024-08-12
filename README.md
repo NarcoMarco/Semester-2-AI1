@@ -18,13 +18,13 @@ cat secret
 ```
 In this it gives a string that looks like a flag, but is not:
 ```
-Input this later
+6fa1b41f5a40b34ca707c6d36a231d79
 ```
 Pass this into the secret program
 ```
-./secret _______
+./secret 6fa1b41f5a40b34ca707c6d36a231d79
 ```
 The output of this gives you the flag
 ```
-CTF FFlag: ______
+CTF FFlag: ae87a47a1b8a6eb58843ce6967ab201f
 ```
