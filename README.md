@@ -26,5 +26,5 @@ Pass this into the secret program
 ```
 The output of this gives you the flag
 ```
-CTF FFlag: ae87a47a1b8a6eb58843ce6967ab201f
+CTF Flag: ae87a47a1b8a6eb58843ce6967ab201f
 ```
