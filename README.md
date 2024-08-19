@@ -214,8 +214,8 @@ configure terminal
 interface eth1
 ip address 10.0.0.1/24
 end
-write memory
 show interface brief # confirm that the ip address is there
+write memory
 exit
 ```
 Now, we can configure our test machine.
@@ -243,6 +243,97 @@ ls
 This should return the flag.
 
 ## "Two networks; one router"
+
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano two-networks-one-router.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: two-networks-one-router
+topology:
+  nodes:
+    r1:
+      kind: linux
+      image: frrouting/frr:latest
+    
+    workstation1:
+      kind: linux
+      image: alpine:latest
+    
+    test:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+
+  links:
+    - endpoints: ['r1:eth1', 'test:eth1']
+    - endpoints: ['r1:eth2', 'workstation1:eth1']
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t two-networks-one-router.yml
+ip a | grep 10.13.37.
+```
+Now that our network has started, we can begin by configuring our router.
+```bash
+# first, we connect to our router:
+docker exec -it clab-two-networks-one-router-r1 vtysh
+# now, we can begin configuring:
+configure terminal
+interface eth1
+ip address 10.0.0.1/24
+interface eth2
+ip address 10.0.1.1/24
+end
+show interface brief # check everything is correct
+write memory
+exit
+```
+Now, we can configure our 'test' machine.
+```bash
+docker exec -it clab-two-networks-one-router-test sh
+# now, we begin configuring
+apk update
+apk add iproute2
+ip addr add 10.0.0.50/24 dev eth1
+ip link set eth1 up
+
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.0.0.1 dev eth1 metric 100
+ip route add default via 172.20.20.1 dev eth0 metric 200
+
+ip route show # confirm changes
+
+# check connection with ping
+ping -c 4 10.0.0.1
+ping -c 4 10.0.1.1
+exit
+```
+Now, we configure 'workstation1'.
+```bash
+docker exec -it clab-two-networks-one-router-workstation1 sh
+# now, we begin configuring
+apk update
+apk add iproute2
+ip addr add 10.0.1.50/24 dev eth1
+ip link set eth1 up
+
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.0.1.1 dev eth1 metric 100
+ip route add default via 172.20.20.1 dev eth0 metric 200
+
+ip route show # confirm changes
+
+# check connection with ping
+ping -c 4 10.0.1.1
+ping -c 4 10.0.0.1
+pinc -c 4 10.0.0.50
+exit
+```
 
 # secret
 
@@ -317,6 +408,205 @@ This returns the flag next to the word "hunched"
 
 ## challenge.000.003
 
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano challenge003.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: challenge003
+topology:
+  nodes:
+    reverse-ctf:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t challenge003.yml
+ip a | grep 10.13.37.
+```
+Now, we remote into the remote test server and obtain the flag:
+```bash
+ssh challenge.000.003@10.13.37.10
+password: challenge.000.003
+ls
+./reverse-ctf.sh 10.13.37.55
+```
+This should return the flag.
+
 ## challenge.000.004
 
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano challenge004.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: challenge004
+topology:
+  nodes:
+    r1:
+      kind: linux
+      image: frrouting/frr:latest
+
+    reverse-ctf:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+
+  links:
+    - endpoints: ['r1:eth1', 'reverse-ctf:eth1']
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t challenge004.yml
+ip a | grep 10.13.37.
+```
+Now, we configure the router.
+```bash
+docker exec -it clab-challenge004-r1 vtysh
+# now, configure the router
+configure terminal
+interface eth1
+ip address 10.13.36.1/24
+end
+show interface brief # confirm ips
+write memory
+exit
+```
+Now, configure the test 'reverse-ctf' machine:
+```bash
+docker exec -it clab-challenge004-reverse-ctf sh
+# now, configure the machine
+apk update
+apk add iproute2
+ip addr add 10.13.36.50/24 dev eth1
+ip link set eth1 up
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.13.36.1 dev eth1 metric 100
+ip route add default via 172.202.20.1 dev eth0 metric 200
+ip route show
+exit
+```
+Now, we remote into the remote test server and obtain the flag:
+```bash
+ssh challenge.000.004@10.13.37.10
+password: challenge.000.004
+ls
+./reverse-ctf.sh 10.13.37.55
+```
+This should return the flag.
+
 ## challenge.000.005
+
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano challenge005.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: challenge005
+topology:
+  nodes:
+    r1:
+      kind: linux
+      image: frrouting/frr:latest
+
+    workstation1:
+      kind: linux
+      image alpine:latest
+
+    workstation2:
+      kind: linux
+      image alpine:latest
+
+    test:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+
+  links:
+    - endpoints: ['r1:eth1', 'test:eth1']
+    - endpoints: ['r1:eth2', 'workstation1:eth1']
+    - endpoints: ['r1:eth3', 'workstation2:eth1']
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t challenge005.yml
+ip a | grep 10.13.37.
+```
+Now, we configure the router.
+```bash
+docker exec -it clab-challenge005-r1 vtysh
+# now, configure the router
+configure terminal
+interface eth1
+ip address 10.0.0.1/24
+interface eth2
+ip address 10.13.36.1/24
+interface eth3
+ip address 10.10.10.1/24
+end
+show interface brief # confirm ips
+write memory
+exit
+```
+Now, configure the 'test' machine:
+```bash
+docker exec -it clab-challenge005-test sh
+# now, configure the machine
+apk update
+apk add iproute2
+ip addr add 10.0.0.10/24 dev eth1
+ip link set eth1 up
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.0.0.1 dev eth1 metric 100
+ip route add default via 172.202.20.1 dev eth0 metric 200
+ip route show
+exit
+```
+Now, configure the 'workstation1' machine:
+```bash
+docker exec -it clab-challenge005-workstation1 sh
+# now, configure the machine
+apk update
+apk add iproute2
+ip addr add 10.13.36.50/24 dev eth1
+ip link set eth1 up
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.13.36.1 dev eth1 metric 100
+ip route add default via 172.202.20.1 dev eth0 metric 200
+ip route show
+exit
+```
+Now, configure the 'workstation2' machine:
+```bash
+docker exec -it clab-challenge005-workstation2 sh
+# now, configure the machine
+apk update
+apk add iproute2
+ip addr add 10.10.10.92/24 dev eth1
+ip link set eth1 up
+ip route show
+ip route del default via 172.20.20.1 dev eth0
+ip route add default via 10.10.10.1 dev eth1 metric 100
+ip route add default via 172.202.20.1 dev eth0 metric 200
+ip route show
+exit
+```
+Now, we remote into the remote test server and obtain the flag:
+```bash
+ssh challenge.000.005@10.13.37.10
+password: challenge.000.005
+ls
+./reverse-ctf.sh 10.13.37.55
+```
+This should return the flag.
