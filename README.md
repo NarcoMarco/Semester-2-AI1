@@ -146,7 +146,101 @@ CTF Flag: ae87a47a1b8a6eb58843ce6967ab201f
 
 ## "Hello Containerlabs"
 
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano Hello_Containerlabs.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: reverse_ctf_tester
+topology:
+  nodes:
+    alpine:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t Hello_Containerlabs.yml
+ip a | grep 10.13.37.
+```
+This challenge requires no configuration on the server, so we now only need to SSH into the server to get the flag.
+```bash
+ssh networking000@10.13.37.10
+password: networking000
+```
+Now we need to run the reverse-ctf file, and give it our ip address we found earlier (In my case, 10.13.37.55).
+```bash
+./reverse-ctf 10.13.37.55
+```
+This should return the flag.
+
 ## "Connect test-server to a router"
+
+First, we must create a yaml file on our local machine that conatins the topology of our network.
+```bash
+nano test-server-router.yml
+```
+Inside the file, we must create the topology.
+```yaml
+name: test-server-router
+topology:
+  nodes:
+    test:
+      kind: linux
+      image: reverse-ctf-server
+      ports:
+        - "2222:22/tcp"
+    r1:
+      kind: linux
+      image: frrouting/frr:latest
+  links:
+    - endpoints: ['r1:eth1', 'test:eth1']
+```
+Now, we can deploy the network, as well as check our ip address, which we will need later.
+```bash
+sudo containerlab deploy -t test-server-router.yml
+ip a | grep 10.13.37.
+```
+Now that our network has started, we can begin by configuring our router.
+
+```bash
+# first, we connect to our router:
+docker exec -it clab-test-server-router-r1 vtysh
+# now, we can begin configuring:
+configure terminal
+interface eth1
+ip address 10.0.0.1/24
+end
+write memory
+show interface brief # confirm that the ip address is there
+exit
+```
+Now, we can configure our test machine.
+```bash
+# first, we connect to the test machine:
+docker exec -it clab-test-server-router-test sh
+# now, we can begin configuring:
+# update the packages:
+apk update
+# install the iproute2 package:
+apk add iproute2
+# configure the ip address:
+ip addr add 10.0.0.50/24 dev eth1
+ip link set eth1 up
+
+ip route add default via 10.0.0.1
+```
+Now, we can connect to the remote testing server to get our flag.
+```bash
+ssh networking001@10.13.37.10
+password: networking001
+ls
+./reverse-ctf.sh 10.13.37.55
+```
+This should return the flag.
 
 ## "Two networks; one router"
 
