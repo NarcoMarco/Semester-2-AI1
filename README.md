@@ -335,24 +335,6 @@ pinc -c 4 10.0.0.50
 exit
 ```
 
-# secret
-
-## secret.000
-
-## secret.001
-
-## secret.002
-
-## secret.003
-
-## secret.004
-
-## secret.005
-
-# Challenge.000
-
-## challenge.000.000
-
 SSH into the server
 ```bash
 ssh challenge.000.000@10.13.37.10
