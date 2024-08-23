@@ -335,6 +335,19 @@ pinc -c 4 10.0.0.50
 exit
 ```
 
+Now, we can connect to the remote testing server to get our flag.
+```bash
+ssh networking002@10.13.37.10
+password: networking002
+ls
+./reverse-ctf.sh 10.13.37.55
+```
+This should return the flag.
+
+# Challenge.000
+
+## Challenge.000.000
+
 SSH into the server
 ```bash
 ssh challenge.000.000@10.13.37.10
